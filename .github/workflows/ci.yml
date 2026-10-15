@@ -1,0 +1,55 @@
+name: Foundation checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: coaching
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: coaching
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U coaching -d coaching"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      COACHING_TEST_DATABASE: Host=localhost;Port=5432;Database=coaching;Username=coaching;Password=ci-only-password
+      Auth__SigningKey: ci-signing-key-only-not-for-production-123456789
+      Auth__OtpPepper: ci-otp-pepper-only-not-for-production-987654321
+      Auth__EnableDevelopmentOtp: "true"
+      Auth__RequestsPerMinute: "1000"
+      ConnectionStrings__Database: Host=localhost;Port=5432;Database=coaching;Username=coaching;Password=ci-only-password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore api/CoachingClassManager.slnx --locked-mode
+      - run: dotnet build api/CoachingClassManager.slnx --no-restore --configuration Release
+      - run: dotnet test api/CoachingClassManager.slnx --no-build --configuration Release
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    env:
+      CI: "1"
+      EXPO_PUBLIC_API_URL: https://api.example.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run export:android

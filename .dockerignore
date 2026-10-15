@@ -1,0 +1,9 @@
+.git
+.cache
+app
+docs
+**/bin
+**/obj
+**/node_modules
+**/.env
+**/appsettings.Local.json

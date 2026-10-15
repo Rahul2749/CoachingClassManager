@@ -1,0 +1,17 @@
+node_modules/
+.expo/
+dist/
+bin/
+obj/
+.cache/
+.env
+.env.*
+!.env.example
+!*.env.example
+app/android/
+app/ios/
+TestResults/
+*.user
+*.suo
+*.log
+api/**/appsettings.Local.json
